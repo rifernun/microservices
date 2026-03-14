@@ -1,10 +1,13 @@
 package com.richard.accounts.service.impl;
 
 import com.richard.accounts.constants.AccountsConstants;
+import com.richard.accounts.dto.AccountsDto;
 import com.richard.accounts.dto.CustomerDto;
 import com.richard.accounts.entity.Accounts;
 import com.richard.accounts.entity.Customer;
 import com.richard.accounts.exception.CustomerAlreadyExistsException;
+import com.richard.accounts.exception.ResourceNotFoundException;
+import com.richard.accounts.mapper.AccountsMapper;
 import com.richard.accounts.mapper.CustomersMapper;
 import com.richard.accounts.repository.AccountRepository;
 import com.richard.accounts.repository.CustomerRepository;
@@ -47,5 +50,21 @@ public class AccountsServiceImpl implements IAccountsService {
         accounts.setCreatedAt(LocalDateTime.now());
         accounts.setCreatedBy("Anonymous");
         return accounts;
+    }
+
+    @Override
+    public CustomerDto fetchAccount(String mobileNumber) {
+
+        Customer customer = customerRepository.findByMobileNumber(mobileNumber).orElseThrow(
+                () -> new ResourceNotFoundException("Customer", "mobileNumber", mobileNumber)
+        );
+
+        Accounts accounts = accountRepository.findByCustomerId(customer.getCustomerId()).orElseThrow(
+                () -> new ResourceNotFoundException("Account", "customerId", customer.getCustomerId().toString())
+        );
+
+        CustomerDto customerDto = CustomersMapper.mapToCustomerDto(customer, new CustomerDto());
+        customerDto.setAccountsDto(AccountsMapper.mapToAccountsDto(accounts, new AccountsDto()));
+        return customerDto;
     }
 }
